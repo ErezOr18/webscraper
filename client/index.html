@@ -13,7 +13,7 @@
         <div class="container"></div>
 
         <script>
-
+            //TODO submit item
             function submitChannel() {
                 const channelURL = document.querySelector('.channel-input').value;
                 fetch('http://localhost:3000/creators', {
@@ -34,13 +34,13 @@
                 }
                 return el;
             }
-
+            //TODO load items
             async function loadCreators() {
                 const res = await fetch('http://localhost:3000/creators');
                 const creators = await res.json();
 
                 const ctr = document.querySelector('.container');
-
+                //TODO change from card to table value
                 creators.forEach(creator => {
                     const card = newEl('div', {class: 'card'});
                     const title = newEl('h4', {innerText: creator.name});
@@ -56,6 +56,7 @@
 
         </script>
         <style>
+            /*TODO change style for item*/
             .container {
                 display: flex;
             }
