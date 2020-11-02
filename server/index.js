@@ -7,7 +7,7 @@ const port = 3000;
 
 const bodyParser = require('body-parser');
 
-
+//TODO change imports
 const scrapers = require('./scrapers');
 const db = require('./db');
 
@@ -20,11 +20,14 @@ app.use(function (req, res, next) {
 });
 */
 app.use(cors());
+
+//TODO set new route
 app.get('/creators', async (req, res) => {
     const creators = await db.getAllCreators();
     res.send(creators)
 })
 
+//TODO set new route + new data parse
 app.post('/creators', async (req, res) => {
     console.log(req.body);
     const channelData = await scrapers.scrapeChannel(req.body.channelURL).catch(err => console.log(err))

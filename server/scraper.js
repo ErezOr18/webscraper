@@ -1,15 +1,15 @@
 const puppeteer = require('puppeteer');
 
 async function scrapeFootLocker(url){
-    //scrape foot locker
+    //TODO scrape foot locker
 }
 
 async function scrapeEastbay(url){
-    // scrape eastbay.com
+    //TODO scrape eastbay.com
 }
 
 async function scrapeDicksportinggoods(url){
-    //scrape dicksportinggoods
+    //TODO scrape dicksportinggoods
 }
 
 //TODO:  add url parser and sent to the right scraper
