@@ -1,38 +1,79 @@
-
 const express = require('express');
 const cors = require('cors');
-
+const mongoose = require('mongoose');
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 const bodyParser = require('body-parser');
 
-//TODO change imports
-const scrapers = require('./scrapers');
-const db = require('./db');
+const scraper = require('./scrapers');
+let Item = require('./item.model');
 
 app.use(bodyParser.json());
-/*
-app.use(function (req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*"); // disabled for security on local
-    res.header("Access-Control-Allow-Headers", "Content-Type");
-    next();
-});
-*/
 app.use(cors());
 
-//TODO set new route
-app.get('/creators', async (req, res) => {
-    const creators = await db.getAllCreators();
-    res.send(creators)
+const uri = "mongodb+srv://erez:erez@cluster0.rdyiz.mongodb.net/db?retryWrites=true&w=majority";
+
+mongoose.connect(uri, { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true });
+const connection = mongoose.connection;
+connection.once('open', () => {
+    console.log("MongoDB database connection established successfully");
 })
 
-//TODO set new route + new data parse
-app.post('/creators', async (req, res) => {
+
+app.get('/items', async (req, res) => {
+    Item.find().then(items => res.json(items))
+        .catch(err => res.status(400).json('Error: ' + err));
+});
+
+
+app.post('/items', async (req, res) => {
+    //Dev
     console.log(req.body);
-    const channelData = await scrapers.scrapeChannel(req.body.channelURL).catch(err => console.log(err))
-    const creators = await db.insertCreator(channelData.name, channelData.avatarURL, req.body.channelURL).catch(err => console.log(err))
-    res.send(creators);
-})
 
-app.listen(port, () => console.log(`Example app listening on port ${port}!`))
+    let allItems = [];
+
+    const items = await scraper.scrapeSite(req.body.itemURL);
+    await items.forEach(item => {
+        const itemDb = new Item({
+            name: item.name,
+            price: item.price,
+            color: item.color_name,
+            sizes: item.sizes,
+            itemURL: item.itemURL
+        });
+        itemDb.save();
+    });
+    Item.find().then(items => res.json(items))
+        .catch(err => res.status(400).json('Error: ' + err));
+});
+
+app.get('/refresh', async (req, res) => {
+    Item.find().then(async allItems => {
+
+        await Item.deleteMany({});
+        console.log(allItems);
+
+        const objectlist = allItems.map(item => String(item.itemURL));
+
+        let urls = Array.from(new Set(objectlist));
+        
+        await urls.forEach(async url => {
+            const items = await scraper.scrapeSite(url);
+            await items.forEach(item => {
+                const itemDb = new Item({
+                    name: item.name,
+                    price: item.price,
+                    color: item.color_name,
+                    sizes: item.sizes,
+                    itemURL: item.itemURL
+                });
+                itemDb.save();
+            });
+        });
+        Item.find().then(items => res.json(items))
+            .catch(err => res.status(400).json('Error: ' + err));
+    })
+});
+
+app.listen(port, () => console.log(`Scraper app listening on port ${port}!`))

@@ -4,24 +4,24 @@
 
     </head>
     <body>
-        <h1>Setuptourist</h1>
+        <h1>Shop Tracker</h1>
 
-        <h4>Add a new creator</h4>
-        <input class="channel-input" type="text" placeholder="paste YouTube url" />
-        <button type="submit" onclick="submitChannel()">submit</button>
+        <h4>Add a new item</h4>
+        <input class="item-input" type="text" placeholder="enter item url" />
+        <button type="submit" onclick="submitItem()">submit</button>
         
         <div class="container"></div>
 
         <script>
             //TODO submit item
-            function submitChannel() {
-                const channelURL = document.querySelector('.channel-input').value;
-                fetch('http://localhost:3000/creators', {
+            function submitItem() {
+                const itemURL = document.querySelector('.item-input').value;
+                fetch('http://localhost:3000/items', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({channelURL})
+                    body: JSON.stringify({itemURL})
                 })    
             }
 
@@ -36,8 +36,8 @@
             }
             //TODO load items
             async function loadCreators() {
-                const res = await fetch('http://localhost:3000/creators');
-                const creators = await res.json();
+                const res = await fetch('http://localhost:3000/items');
+                const items = await res.json();
 
                 const ctr = document.querySelector('.container');
                 //TODO change from card to table value
