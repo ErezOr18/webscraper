@@ -2,12 +2,13 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5000;
 
 const bodyParser = require('body-parser');
 
 const scraper = require('./scrapers');
 let Item = require('./item.model');
+const { json } = require('body-parser');
 
 app.use(bodyParser.json());
 app.use(cors());
@@ -44,23 +45,24 @@ app.post('/items', async (req, res) => {
         });
         itemDb.save();
     });
-    Item.find().then(items => res.json(items))
-        .catch(err => res.status(400).json('Error: ' + err));
+    res.json("ok");
 });
 
 app.get('/refresh', async (req, res) => {
     Item.find().then(async allItems => {
 
         await Item.deleteMany({});
-        console.log(allItems);
 
         const objectlist = allItems.map(item => String(item.itemURL));
 
         let urls = Array.from(new Set(objectlist));
-        
-        await urls.forEach(async url => {
+
+        console.log(urls);
+
+        await Promise.all(urls.map(async (url) => {
             const items = await scraper.scrapeSite(url);
-            await items.forEach(item => {
+            console.log(JSON.stringify(items));
+            await Promise.all(items.map(async item => {
                 const itemDb = new Item({
                     name: item.name,
                     price: item.price,
@@ -68,12 +70,18 @@ app.get('/refresh', async (req, res) => {
                     sizes: item.sizes,
                     itemURL: item.itemURL
                 });
-                itemDb.save();
-            });
-        });
-        Item.find().then(items => res.json(items))
-            .catch(err => res.status(400).json('Error: ' + err));
-    })
+                await itemDb.save();
+            }));
+        })).then(() =>Item.find().then(items => res.json(items)));
+    });
+});
+
+
+
+app.delete('/items/:id', (req, res) => {
+    Item.findByIdAndDelete(req.params.id)
+        .then(() => Item.find().then(items => res.json(items)))
+        .catch(err => res.status(400).json('Error: ' + err));
 });
 
 app.listen(port, () => console.log(`Scraper app listening on port ${port}!`))
