@@ -109,7 +109,7 @@ async function scrapeDickSport(url) {
 
         //TODO check for special price items
         let text2 = ""
-
+//*[@id="attr_Color0"]/div[1]/div/pdp-price/div/div/div/div/div/span
         const [el2] = await page.$x('//*[@id="attr_Color0"]/div[1]/div/pdp-price/div/div/div/div/div/span');
         text2 = await el2.getProperty('textContent');
         const price = await text2.jsonValue();
