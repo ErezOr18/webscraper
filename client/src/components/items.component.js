@@ -110,7 +110,7 @@ export default class itemsList extends Component {
 
     render() {
         return (
-            <div>
+            <div className = "containr-fluid">
                 <h3>Items</h3>
                 <form onSubmit={this.onSubmit}>
                     <div className="form-group">

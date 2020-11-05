@@ -29,8 +29,6 @@ app.get('/items', async (req, res) => {
 
 
 app.post('/items', async (req, res) => {
-    //Dev
-    console.log(req.body);
 
     let allItems = [];
 
@@ -57,11 +55,9 @@ app.get('/refresh', async (req, res) => {
 
         let urls = Array.from(new Set(objectlist));
 
-        console.log(urls);
 
         await Promise.all(urls.map(async (url) => {
             const items = await scraper.scrapeSite(url);
-            console.log(JSON.stringify(items));
             await Promise.all(items.map(async item => {
                 const itemDb = new Item({
                     name: item.name,
@@ -72,7 +68,7 @@ app.get('/refresh', async (req, res) => {
                 });
                 await itemDb.save();
             }));
-        })).then(() =>Item.find().then(items => res.json(items)));
+        })).then(() => Item.find().then(items => res.json(items)));
     });
 });
 

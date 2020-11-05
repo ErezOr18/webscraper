@@ -3,9 +3,9 @@ const puppeteer = require('puppeteer');
 
 async function scrapeFootlockerAndEastbay(url) {
     try {
-        const browser = await puppeteer.launch({ headless: false, slowMo: 200 });
+        const browser = await puppeteer.launch({ headless: false });
         const page = await browser.newPage();
-        await page.setDefaultNavigationTimeout(0);
+        page.setDefaultNavigationTimeout(0);
 
         await page.evaluateOnNewDocument(() => {
             delete navigator.__proto__.webdriver;
@@ -14,27 +14,12 @@ async function scrapeFootlockerAndEastbay(url) {
 
         await page.goto(url);
 
-
         //scrape product name
         const [el] = await page.$x('//*[@id="pageTitle"]/span/span[1]');
         const text = await el.getProperty('textContent');
         const name = await text.jsonValue();
 
         //scrape product price
-
-        //check for special price
-        let text2 = ""
-        const [found] = await page.$x('//*[@id="ProductDetails"]/div[5]/div[1]/span/div/p/span[1]');
-        if (found !== undefined) {
-            text2 = await found.getProperty('textContent');
-        }
-        else {
-            const [el2] = await page.$x('//*[@id="ProductDetails"]/div[5]/div[1]/span/div/span');
-            text2 = await el2.getProperty('textContent');
-        }
-        const price = await text2.jsonValue();
-
-
 
         //scrape product colors
 
@@ -43,21 +28,74 @@ async function scrapeFootlockerAndEastbay(url) {
         //scrape product sizes
         await page.waitForSelector('#ProductDetails > div.ProductDetails-form__info > div.ProductDetails-form__sizes > fieldset > div');
 
+
+
         //TODO  deal with overflow of colors
         const data = await page.evaluate(async () => {
-            let colors_data = Array.from(document.querySelectorAll('#ProductDetails > div.ProductStyles.row.row--always > fieldset > div'));
+            const toggler = document.querySelector('#ProductDetails > div.ProductStyles.row.row--always > button');
+
             let colors = [];
-            colors_data = colors_data.map((element) => {
-                element.querySelector('input[type="radio"]').click();
-                const sizes = Array.from(document.querySelectorAll('#ProductDetails > div.ProductDetails-form__info > div.ProductDetails-form__sizes > fieldset > div > div'));
-                const true_sizes = sizes.filter(element => !element.className.includes('c-form-field--unavailable'));
-                colors.push({
-                    color: document.querySelector('#ProductDetails > div.ProductDetails-form__info > p').textContent,
-                    color_sizes: true_sizes.map(element => element.querySelector('label > span').outerText)
+
+            if (toggler) {
+
+
+                await toggler.click();
+
+                let colors_data = document.querySelectorAll('div.c-modal__content > fieldset > div.c-form-field.c-form-field--radio.SelectStyle.col')
+
+                for (let element of colors_data) {
+
+                    element.querySelector('input[type="radio"]').click();
+
+
+                    const button = document.querySelector('button[class="Button ProductStyles-toggler"]');
+                    if (button) {
+
+                        button.click();
+                    }
+
+                    const sizes = Array.from(document.querySelectorAll('#ProductDetails > div.ProductDetails-form__info > div.ProductDetails-form__sizes > fieldset > div > div'));
+                    const true_sizes = sizes.filter(element => !element.className.includes('c-form-field--unavailable'));
+                    
+                    //check for special price
+                    let text2 = ""
+                    const found =  document.querySelector('#ProductDetails > div.ProductDetails-form__info > div.ProductDetails-form__text.row.row--always.flex-between.flex-center-vertical > span > div > p > span.ProductPrice-final');
+                    if (found !== null) {
+                        text2 = found.textContent;
+                    }
+                    else {
+                        const el2 = document.querySelector('div[class="ProductPrice"]');
+                        text2 = el2.textContent;
+                    }
+                    const price = text2;
+
+
+                    colors.push({
+                        color: document.querySelector('#ProductDetails > div.ProductDetails-form__info > p').textContent,
+                        color_sizes: true_sizes.map(element => element.querySelector('label > span').outerText),
+                        color_price: price
+                    });
+
+                    toggler.click();
+                };
+            }
+            else {
+                let colors_data = Array.from(document.querySelectorAll('#ProductDetails > div.ProductStyles.row.row--always > fieldset > div'));
+
+                colors_data = colors_data.map((element) => {
+
+                    element.querySelector('input[type="radio"]').click();
+
+                    const sizes = Array.from(document.querySelectorAll('#ProductDetails > div.ProductDetails-form__info > div.ProductDetails-form__sizes > fieldset > div > div'));
+                    const true_sizes = sizes.filter(element => !element.className.includes('c-form-field--unavailable'));
+
+                    colors.push({
+                        color: document.querySelector('#ProductDetails > div.ProductDetails-form__info > p').textContent,
+                        color_sizes: true_sizes.map(element => element.querySelector('label > span').outerText)
+                    });
                 });
-            });
 
-
+            }
             return {
                 colors: colors
             };
@@ -66,14 +104,13 @@ async function scrapeFootlockerAndEastbay(url) {
         const itemURL = url;
         const colors = data.colors;
 
-
         let items = [];
-
 
         colors.forEach(color => {
             const sizes = color.color_sizes.join(',');
             const color_name = color.color;
-            items.push({ name, price, color_name, sizes , itemURL });
+            const color_price = color.color_price;
+            items.push({ name, color_price, color_name, sizes, itemURL });
         });
 
 
@@ -90,7 +127,7 @@ async function scrapeDickSport(url) {
     try {
         const browser = await puppeteer.launch({ headless: false, slowMo: 200 });
         const page = await browser.newPage();
-        await page.setDefaultNavigationTimeout(0);
+        page.setDefaultNavigationTimeout(0);
 
         await page.evaluateOnNewDocument(() => {
             delete navigator.__proto__.webdriver;
@@ -108,8 +145,8 @@ async function scrapeDickSport(url) {
         //scrape product price
 
         //TODO check for special price items
-        let text2 = ""
-//*[@id="attr_Color0"]/div[1]/div/pdp-price/div/div/div/div/div/span
+
+
         const [el2] = await page.$x('//*[@id="attr_Color0"]/div[1]/div/pdp-price/div/div/div/div/div/span');
         text2 = await el2.getProperty('textContent');
         const price = await text2.jsonValue();
@@ -154,7 +191,7 @@ async function scrapeDickSport(url) {
         colors.forEach(color => {
             const sizes = color.color_sizes.join(',');
             const color_name = color.color;
-            items.push({ name, price, color_name, sizes , itemURL });
+            items.push({ name, price, color_name, sizes, itemURL });
         })
 
         browser.close();
