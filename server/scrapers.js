@@ -56,24 +56,21 @@ async function scrapeFootlockerAndEastbay(url) {
 
                     const sizes = Array.from(document.querySelectorAll('#ProductDetails > div.ProductDetails-form__info > div.ProductDetails-form__sizes > fieldset > div > div'));
                     const true_sizes = sizes.filter(element => !element.className.includes('c-form-field--unavailable'));
-                    
-                    //check for special price
-                    let text2 = ""
-                    const found =  document.querySelector('#ProductDetails > div.ProductDetails-form__info > div.ProductDetails-form__text.row.row--always.flex-between.flex-center-vertical > span > div > p > span.ProductPrice-final');
-                    if (found !== null) {
-                        text2 = found.textContent;
-                    }
-                    else {
-                        const el2 = document.querySelector('div[class="ProductPrice"]');
-                        text2 = el2.textContent;
-                    }
-                    const price = text2;
 
+                    //check for special price
+                    
+                    let price = document.querySelector('div.ProductPrice').textContent;
+
+                    if (price.split('$').length>2){
+                        price = '$'+price.split('$')[1];
+                    }
+
+                    const color_price = price;
 
                     colors.push({
                         color: document.querySelector('#ProductDetails > div.ProductDetails-form__info > p').textContent,
                         color_sizes: true_sizes.map(element => element.querySelector('label > span').outerText),
-                        color_price: price
+                        color_price: color_price
                     });
 
                     toggler.click();
@@ -81,17 +78,25 @@ async function scrapeFootlockerAndEastbay(url) {
             }
             else {
                 let colors_data = Array.from(document.querySelectorAll('#ProductDetails > div.ProductStyles.row.row--always > fieldset > div'));
-
+                
                 colors_data = colors_data.map((element) => {
 
                     element.querySelector('input[type="radio"]').click();
+                    let price = document.querySelector('div.ProductPrice').textContent;
+
+                    if (price.split('$').length>2){
+                        price = '$'+price.split('$')[1];
+                    }
+
+                    const color_price = price;
 
                     const sizes = Array.from(document.querySelectorAll('#ProductDetails > div.ProductDetails-form__info > div.ProductDetails-form__sizes > fieldset > div > div'));
                     const true_sizes = sizes.filter(element => !element.className.includes('c-form-field--unavailable'));
 
                     colors.push({
                         color: document.querySelector('#ProductDetails > div.ProductDetails-form__info > p').textContent,
-                        color_sizes: true_sizes.map(element => element.querySelector('label > span').outerText)
+                        color_sizes: true_sizes.map(element => element.querySelector('label > span').outerText),
+                        color_price: color_price
                     });
                 });
 
@@ -109,8 +114,8 @@ async function scrapeFootlockerAndEastbay(url) {
         colors.forEach(color => {
             const sizes = color.color_sizes.join(',');
             const color_name = color.color;
-            const color_price = color.color_price;
-            items.push({ name, color_price, color_name, sizes, itemURL });
+            const price = color.color_price;
+            items.push({ name, price, color_name, sizes, itemURL });
         });
 
 
